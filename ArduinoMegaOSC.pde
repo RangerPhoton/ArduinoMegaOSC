@@ -1,20 +1,19 @@
 /**
- Arduino 
+ Arduino OSC 
  
- Based on Processing Arduino to OSC example sketch written by Liam Lacey (http://liamtmlacey.tumblr.com)
- Graphics adapted from arduino_input_mega example sketch in Arduino  
+ This processing sketch allows communication to/from the Arduino and converts the data to/from OSC 
+ graphical i/o activity indicators and traveling graphs show you what's happening in real time
+
+ Based in part on:
+ Arduino code adapted from the tutorial at http://www.arduino.cc/playground/Interfacing/Processing
+ Graphics adapted from arduino_input_mega example sketch in the Arduino library
+ Processing Arduino to OSC example sketch written by Liam Lacey (http://liamtmlacey.tumblr.com)
+ OSC code adapted from 'oscP5sendreceive' by andreas schlegel
+ Traveling graphs adapted from code by twitter.com/CedricKiefer
  
- This processing sketch allows communication to and from the Arduino (using the processing arduino library), 
- and then converts the data into/from OSC (using the oscP5 library) to communicate to/from other OSC compatible software/hardware, e.g. Max/MSP.
- 
- Graphical elements show pin activity in real-time, plus in a treveling graph adapted from code by twitter.com/CedricKiefer 
- 
- * In order for this sketch to communicate with the Arduino board, the StandardFirmata Arduino sketch must be uploaded onto the board
+ * In order for this sketch to communicate with the Arduino board, 
+ the StandardFirmata Arduino sketch must be uploaded onto the board
  (Examples > Firmata > StandardFirmata)
- 
- * OSC code adapted from 'oscP5sendreceive' by andreas schlegel
- * Arduino code taken from the tutorial at http://www.arduino.cc/playground/Interfacing/Processing
- 
  
  */
 
@@ -33,40 +32,45 @@ Arduino arduino;
 //variables needed for osc
 OscP5 oscP5;
 NetAddress myRemoteLocation;
-
-//set/change port numbers here
 int incomingPort = 12000;
 int outgoingPort = 12001;
-
-//set/change the IP address that the OSC data is being sent to
-//127.0.0.1 is the local address (for sending osc to an application on the same computer)
 String ipAddress = "127.0.0.1";
 
-boolean Ain = true;
+// Set up input and output pins 
+//currently each type must be separate, nonoverlapping and contiguous
+boolean Ain = true; //enable Analog inputs
 int FirstAin = 0;
 int LastAin = 7;  //Arduino Mega: <=15
 
-boolean Din = true;
+boolean Din = true; //enable Digital inputs
 int FirstDin = 22;
 int LastDin = 45;  //Arduino Mega: <=53
 
-boolean Dout = true;
+boolean Dout = true; //enable Digital outputs
 int FirstDout = 2;
 int LastDout = 13;  //Arduino Mega: <=53
-float[] DoutVal = new float[53];
+float[] DoutVal = new float[53]; //used to animate output indicators in GUI
 
-int DigitalOutPin;
-int DigitalOutVal = 0;
 
+//UI color presets
 color off = color(4, 79, 111);
 color on = color(84, 145, 158);
 color blank = color(6, 90, 120);
 color blankline = color(10, 110, 140);
 color label = color(100, 165, 178);
 
+//Traveling Graph variables
+boolean graphs = true;
+int graphWidth = 340;
+int graphHeight = 45;
+int graphInsetTop = 85;
+int graphInsetLeft = 30;
+int columnBreak = 7;
+int textMargin = 3;
+float[] inByte = new float[16]; //array to capture analog input data 
+int[][] numbers = new int[16][graphWidth]; //arrays to hold graph pixel data in circular buffer
 
 
-//---------------setup code goes in the following function---------------------
 void setup() 
 {
   size(880, 540);
@@ -149,7 +153,6 @@ void draw() {
 
   //read data from the digital input pins and send them out as osc data
   //draw pin diagrams and input/output data indicators 
-
   for (i = 0; i <= 53; i++)
   {
     if (Din==true) // i == 2 || i == 4 || i == 7)
@@ -191,39 +194,41 @@ void draw() {
     }
   } 
 
-    //GraphPaper
-    //for(int p = 0 ;p<=700/10;p++){
-    //stroke(80);
-    //line((-frameCount%10)+p*10,150,(-frameCount%10)+p*10,200);
+  //Traveling Graphs
+  //GraphPaper
+  //for(int p = 0 ;p<=700/10;p++){
+  //stroke(80);
+  //line((-frameCount%10)+p*10,150,(-frameCount%10)+p*10,200);
 
-    //line(100,p*10,100,p*10);
-    //}
-    for (i = 0; i <= LastAin-FirstAin; i++) {
-      textSize(11);
-      textAlign(LEFT, TOP);
-      boolean graph = true;
-      if (graph) { 
-        // layout two columns of n graphs
-        for (i = 0; i <= 15; i++) { 
-          int xoffset = 0;
-          int yoffset = 0;
-          if (i>columnBreak) {
-            xoffset = graphWidth+2;
-            yoffset = graphHeight*8;
-          }
-          fill(0);
-          stroke(off);
-          rect(graphInsetLeft+xoffset, graphInsetTop+(i*graphHeight)-yoffset, graphWidth, graphHeight-2);
-          stroke(50);
-          line(graphInsetLeft+xoffset, graphInsetTop+(graphHeight/2)+(i*graphHeight)-yoffset, 
-            graphInsetLeft+graphWidth+xoffset, graphInsetTop+(graphHeight/2)+(i*graphHeight)-yoffset);
-          fill(label);
-          text("A"+i, graphInsetLeft+textMargin+xoffset, graphInsetTop+textMargin+(i*graphHeight)-yoffset);
+  //line(100,p*10,100,p*10);
+  //}
+  //Draw graph areas
+  for (i = 0; i <= LastAin-FirstAin; i++) {
+    textSize(11);
+    textAlign(LEFT, TOP);
+    boolean graph = true;
+    if (graph) { 
+      // layout two columns of n graphs
+      for (i = 0; i <= 15; i++) { 
+        int xoffset = 0;
+        int yoffset = 0;
+        if (i>columnBreak) {
+          xoffset = graphWidth+2;
+          yoffset = graphHeight*8;
         }
+        fill(0);
+        stroke(off);
+        rect(graphInsetLeft+xoffset, graphInsetTop+(i*graphHeight)-yoffset, graphWidth, graphHeight-2);
+        stroke(50);
+        line(graphInsetLeft+xoffset, graphInsetTop+(graphHeight/2)+(i*graphHeight)-yoffset, 
+          graphInsetLeft+graphWidth+xoffset, graphInsetTop+(graphHeight/2)+(i*graphHeight)-yoffset);
+        fill(label);
+        text("A"+i, graphInsetLeft+textMargin+xoffset, graphInsetTop+textMargin+(i*graphHeight)-yoffset);
       }
+    }
 
-  if (graphs) {
-      //Draw moving graphs into a circular buffer
+    //Draw traveling graphs into a circular buffer
+    if (graphs) {
       for (i = FirstAin; i <= LastAin; i++) {
         int xoffset = 0;
         int yoffset = 0;
@@ -248,18 +253,6 @@ void draw() {
     }
   }
 }
-
-//Graphing variables
-boolean graphs = true;
-int graphWidth = 340;
-int graphHeight = 45;
-int graphInsetTop = 85;
-int graphInsetLeft = 30;
-int columnBreak = 7;
-int textMargin = 3;
-float[] inByte = new float[16]; //array to capture analog input data 
-int[][] numbers = new int[16][graphWidth]; //arrays to hold graph pixel data
-
 
 void mousePressed() {
   if (mouseX<30) graphs = !graphs;
@@ -302,7 +295,6 @@ void oscEvent(OscMessage theOscMessage)
         arduino.digitalWrite(i, Arduino.HIGH); //turn pin ON
         if (debug) print("pin turned on\n");
       }
-      //DigitalOutPin = i;
       DoutVal[i] = oscValue*100;
     }
   }
@@ -314,7 +306,6 @@ void oscEvent(OscMessage theOscMessage)
     {
       int oscValue = round(abs(oscFloatValue)*100);
       arduino.analogWrite(i, oscValue); //sets the pin to the incoming osc data
-      //DigitalOutPin = i;
       DoutVal[i] = oscValue;
       if (debug) println("pin "+i+" set to "+oscValue);
     }
