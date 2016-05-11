@@ -1,21 +1,23 @@
 /**
- Arduino OSC 
+ Arduino OSC for Processing
  
- This processing sketch allows communication to/from the Arduino and converts the data to/from OSC 
- graphical i/o activity indicators and traveling graphs show you what's happening in real time
+ This processing sketch communicates over USB to/from an Arduino and converts the data to/from OSC 
+ with graphical activity indicators plus traveling graphs to show what's happening in real time
 
- Based in part on:
- Arduino code adapted from the tutorial at http://www.arduino.cc/playground/Interfacing/Processing
- Graphics adapted from arduino_input_mega example sketch in the Arduino library
- Processing Arduino to OSC example sketch written by Liam Lacey (http://liamtmlacey.tumblr.com)
- OSC code adapted from 'oscP5sendreceive' by andreas schlegel
- Traveling graphs adapted from code by twitter.com/CedricKiefer
- 
- * In order for this sketch to communicate with the Arduino board, 
+ In order for this Processing sketch to communicate with the Arduino board over USB, 
  the StandardFirmata Arduino sketch must be uploaded onto the board
  (Examples > Firmata > StandardFirmata)
  
- */
+ Code currently hardwired for the Arduino Mega, adapting to others should be *fairly* easy...
+
+ Based in part on:
+ * Base sketch with graphics adapted from arduino_input_mega example sketch in the Arduino library
+ * Processing Arduino to OSC example code by Liam Lacey (http://liamtmlacey.tumblr.com)
+ * Arduino code adapted from the tutorial at http://www.arduino.cc/playground/Interfacing/Processing
+ * OSC code adapted from 'oscP5sendreceive' by andreas schlegel
+ * Traveling graphs adapted from code by twitter.com/CedricKiefer
+ 
+*/
 
 
 //libraries needed for arduino communication
